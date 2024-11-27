@@ -232,7 +232,7 @@ const WindowResizeListener = () => {
 export default WindowResizeListener;
 ```
 
-##### **Exemple 3: Récupération de données depuis une API**
+##### **Exemple 3: Mise à jour d'un titre de page en fonction de l'état**
 
 ```jsx
 import React, { useState, useEffect } from "react";
