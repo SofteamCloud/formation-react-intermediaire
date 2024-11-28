@@ -1383,11 +1383,200 @@ export default Total;
 
 ### useContext
 
-n/a
+### **Définitions**
 
-### useId
+`useContext` est un Hook React qui permet d'accéder à des données partagées via un `Context` sans passer les props explicitement à chaque niveau de l'arborescence des composants. Il simplifie la gestion des données globales telles que les thèmes, l'état d'authentification ou les préférences utilisateur.
 
-n/a
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Partage de données globales** :
+
+   - Lorsque des informations doivent être accessibles dans plusieurs composants, comme le thème (dark/light), les données utilisateur, ou la configuration de l'application.
+
+2. **Éviter le "props drilling"** :
+
+   - Réduire le besoin de transmettre des props à travers de nombreux niveaux de composants.
+
+3. **Faciliter la collaboration entre composants éloignés** :
+   - Permet aux composants distants dans l'arborescence de partager et d'utiliser des données globales.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 : Gestion du `props drilling`**
+
+```jsx
+import { useState, createContext, useContext } from "react";
+import ReactDOM from "react-dom/client";
+
+const UserContext = createContext();
+
+function Component1() {
+  const [user, setUser] = useState("Jesse Hall");
+
+  return (
+    <UserContext.Provider value={user}>
+      <h1>{`Hello ${user}!`}</h1>
+      <Component2 />
+    </UserContext.Provider>
+  );
+}
+
+function Component2() {
+  return (
+    <>
+      <h1>Component 2</h1>
+      <Component3 />
+    </>
+  );
+}
+
+function Component3() {
+  return (
+    <>
+      <h1>Component 3</h1>
+      <Component4 />
+    </>
+  );
+}
+
+function Component4() {
+  return (
+    <>
+      <h1>Component 4</h1>
+      <Component5 />
+    </>
+  );
+}
+
+function Component5() {
+  const user = useContext(UserContext);
+
+  return (
+    <>
+      <h1>Component 5</h1>
+      <h2>{`Hello ${user} again!`}</h2>
+    </>
+  );
+}
+```
+
+#### **Exemple 3 : Gestion d'un thème global**
+
+```jsx
+import React, { createContext, useContext, useState } from "react";
+
+// Création du contexte
+const ThemeContext = createContext();
+
+// Composant fournisseur du thème
+const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useState("light");
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+// Composant utilisant le contexte
+const ThemeSwitcher = () => {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
+  return (
+    <div
+      style={{
+        background: theme === "light" ? "#fff" : "#333",
+        color: theme === "light" ? "#000" : "#fff",
+        padding: "20px",
+        textAlign: "center",
+      }}
+    >
+      <p>Le thème actuel est : {theme}</p>
+      <button onClick={toggleTheme}>Changer de thème</button>
+    </div>
+  );
+};
+
+// Application principale
+const App = () => (
+  <ThemeProvider>
+    <ThemeSwitcher />
+  </ThemeProvider>
+);
+
+export default App;
+```
+
+#### **Exemple 3 : Gestion d'un utilisateur authentifié**
+
+```jsx
+import React, { createContext, useContext, useState } from "react";
+
+// Création du contexte
+const AuthContext = createContext();
+
+// Composant fournisseur pour l'authentification
+const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+
+  const login = (username) => setUser({ username });
+  const logout = () => setUser(null);
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Composant qui utilise le contexte pour afficher les informations utilisateur
+const UserProfile = () => {
+  const { user, logout } = useContext(AuthContext);
+
+  return (
+    <div style={{ margin: "20px" }}>
+      {user ? (
+        <div>
+          <p>Connecté en tant que : {user.username}</p>
+          <button onClick={logout}>Déconnexion</button>
+        </div>
+      ) : (
+        <p>Non connecté.</p>
+      )}
+    </div>
+  );
+};
+
+// Composant qui utilise le contexte pour se connecter
+const LoginForm = () => {
+  const { login } = useContext(AuthContext);
+
+  return (
+    <div style={{ margin: "20px" }}>
+      <button onClick={() => login("JohnDoe")}>Connexion</button>
+    </div>
+  );
+};
+
+// Application principale
+const App = () => (
+  <AuthProvider>
+    <UserProfile />
+    <LoginForm />
+  </AuthProvider>
+);
+
+export default App;
+```
 
 ### Rest
 
