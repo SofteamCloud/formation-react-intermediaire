@@ -23,6 +23,7 @@
 6. [Écosystème de librairies](#ecosysteme-de-librairies)
    - [React Router DOM](#react-router-dom)
    - [React Query](#react-query)
+   - [React Hook Form](#react-hook-form)
 7. [Rendu côté serveur](#rendu-cote-serveur)
    - [Next.js](#nextjs)
    - [Remix](#remix)
@@ -707,6 +708,686 @@ return (
 - https://usehooks.com/
 - https://usehooks-ts.com/
 - https://github.com/streamich/react-use
+
+### useCallback
+
+#### **1. Définition**
+
+`useCallback` est un hook de React qui mémorise une fonction pour éviter qu'elle ne soit recréée à chaque rendu du composant. Il est utile dans les cas où des fonctions sont passées en props à des composants enfants ou utilisées dans des dépendances pour éviter des re-rendus inutiles.
+
+---
+
+#### **2. Dans quel cas l'utiliser ?**
+
+- **Optimisation des performances** : Éviter que des fonctions ne soient recréées inutilement à chaque rendu.
+- **Passage de fonctions en props** : Empêcher les re-rendus inutiles des composants enfants dépendant de ces fonctions.
+- **Dépendances dans les hooks** : Empêcher des effets secondaires (dans `useEffect`, `useMemo`, etc.) d'être déclenchés à cause d'une fonction recréée.
+
+---
+
+#### **3. Des exemples concrets de code pour chaque cas ?**
+
+##### **Exemple 1 : Prévention des re-rendus inutiles d'un composant enfant**
+
+```jsx
+import React, { useState, useCallback } from "react";
+
+const Child = React.memo(({ onClick }) => {
+  const [bool, setBool] = useState(false);
+  console.log("Child render");
+  let startTime = performance.now();
+  while (performance.now() - startTime < 500) {
+    // Ne rien faire pendant 500 ms pour simuler du code extrêmement lent
+  }
+  console.log("Child re-rendered");
+  return (
+    <>
+      <button onClick={() => setBool(!bool)}>
+        Click Me! {JSON.stringify(bool)}
+      </button>
+      <button onClick={onClick}>Increment</button>
+    </>
+  );
+});
+
+const Parent = () => {
+  const [count, setCount] = useState(0);
+
+  // useCallback empêche la recréation de cette fonction à chaque rendu
+  const handleClick = useCallback(() => {
+    console.log("Button clicked");
+    setCount((prev) => prev + 1);
+  }, []);
+
+  return (
+    <div>
+      <p>Parent count: {count}</p>
+      {/* <button onClick={() => setCount((prev) => prev + 1)}>Increment</button> */}
+      <Child onClick={handleClick} />
+    </div>
+  );
+};
+
+export default Parent;
+```
+
+##### **Exemple 2 **
+
+```jsx
+// App js
+
+import { useState } from 'react';
+import ProductPage from './ProductPage.js';
+
+export default function App() {
+  const [isDark, setIsDark] = useState(false);
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          checked={isDark}
+          onChange={e => setIsDark(e.target.checked)}
+        />
+        Mode sombre
+      </label>
+      <hr />
+      <ProductPage
+        referrerId="wizard_of_oz"
+        productId={123}
+        theme={isDark ? 'dark' : 'light'}
+      />
+    </>
+  );
+}
+// --------------------------------------------
+// ProductPage.js
+
+import { useCallback } from 'react';
+import ShippingForm from './ShippingForm.js';
+
+export default function ProductPage({ productId, referrer, theme }) {
+  const handleSubmit = useCallback((orderDetails) => {
+    post('/product/' + productId + '/buy', {
+      referrer,
+      orderDetails,
+    });
+  }, [productId, referrer]);
+
+  return (
+    <div className={theme}>
+      <ShippingForm onSubmit={handleSubmit} />
+    </div>
+  );
+}
+
+function post(url, data) {
+  // Imaginez que ça envoie une requête...
+  console.log('POST /' + url);
+  console.log(data);
+}
+
+// --------------------------------------------
+// ShippingForm.js
+import { memo, useState } from 'react';
+
+const ShippingForm = memo(function ShippingForm({ onSubmit }) {
+  const [count, setCount] = useState(1);
+
+  console.log('[ARTIFICIELLEMENT LENT] Rendu de <ShippingForm />');
+  let startTime = performance.now();
+  while (performance.now() - startTime < 500) {
+    // Ne rien faire pendant 500 ms pour simuler du code extrêmement lent
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const orderDetails = {
+      ...Object.fromEntries(formData),
+      count
+    };
+    onSubmit(orderDetails);
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <p><b>Remarque : <code>ShippingForm</code> est artificiellement ralenti !</b></p>
+      <label>
+        Nombre d’éléments :
+        <button type="button" onClick={() => setCount(count - 1)}>–</button>
+        {count}
+        <button type="button" onClick={() => setCount(count + 1)}>+</button>
+      </label>
+      <label>
+        Rue :
+        <input name="street" />
+      </label>
+      <label>
+        Ville :
+        <input name="city" />
+      </label>
+      <label>
+        Code postal :
+        <input name="zipCode" />
+      </label>
+      <button type="submit">Envoyer</button>
+    </form>
+  );
+});
+
+export default ShippingForm;
+```
+
+En revanche, il ne faut pas utiliser `useCallback` de manière excessive, car il peut ajouter de la complexité au code sans toujours apporter de bénéfices significatifs. Utilise-le uniquement dans les cas où des optimisations sont réellement nécessaires.
+
+### useReducer
+
+#### **1. Définition**
+
+`useReducer` est un hook de React utilisé pour gérer des états complexes ou dépendants de plusieurs actions. Il fonctionne en combinant une fonction réductrice (`reducer`) et un état initial pour produire un nouvel état en réponse à des actions.
+
+---
+
+#### **2. Dans quel cas l'utiliser ?**
+
+- **États complexes** : Lorsque plusieurs variables d'état sont liées ou dépendantes.
+- **Logique d'état centralisée** : Pour regrouper toute la logique de gestion d'état dans une seule fonction (`reducer`).
+- **Remplacement de `useState`** : Lorsque `useState` devient difficile à gérer à cause de la complexité des transitions d'état.
+
+---
+
+#### **3. Des exemples concrets de code pour chaque cas ?**
+
+##### **Exemple 1 : Gestion d'un compteur avec des actions multiples**
+
+```jsx
+import React, { useReducer } from "react";
+
+// Définition du reducer
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "increment":
+      return { count: state.count + 1 };
+    case "decrement":
+      return { count: state.count - 1 };
+    case "reset":
+      return { count: 0 };
+    default:
+      throw new Error(`Unknown action: ${action.type}`);
+  }
+};
+
+const Counter = () => {
+  const [state, dispatch] = useReducer(reducer, { count: 0 });
+
+  return (
+    <div>
+      <p>Count: {state.count}</p>
+      <button onClick={() => dispatch({ type: "increment" })}>Increment</button>
+      <button onClick={() => dispatch({ type: "decrement" })}>Decrement</button>
+      <button onClick={() => dispatch({ type: "reset" })}>Reset</button>
+    </div>
+  );
+};
+
+export default Counter;
+```
+
+##### **Exemple 2: Todo list** :
+
+```jsx
+// App
+import { useReducer } from 'react';
+import AddTask from './AddTask.js';
+import TaskList from './TaskList.js';
+
+function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'added': {
+      return [...tasks, {
+        id: action.id,
+        text: action.text,
+        done: false
+      }];
+    }
+    case 'changed': {
+      return tasks.map(t => {
+        if (t.id === action.task.id) {
+          return action.task;
+        } else {
+          return t;
+        }
+      });
+    }
+    case 'deleted': {
+      return tasks.filter(t => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+
+export default function TaskApp() {
+  const [tasks, dispatch] = useReducer(
+    tasksReducer,
+    initialTasks
+  );
+
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text,
+    });
+  }
+
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'changed',
+      task: task
+    });
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId
+    });
+  }
+
+  return (
+    <>
+      <h1>Guide de Prague</h1>
+      <AddTask
+        onAddTask={handleAddTask}
+      />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+
+let nextId = 3;
+const initialTasks = [
+  { id: 0, text: 'Visiter le musée Franz-Kafka', done: true },
+  { id: 1, text: 'Voir un spectacle de marionnettes', done: false },
+  { id: 2, text: 'Prendre une photo du mur John Lennon', done: false }
+];
+
+
+//-----------------------------------------
+// TaskList.js
+import { useState } from 'react';
+
+export default function TaskList({
+  tasks,
+  onChangeTask,
+  onDeleteTask
+}) {
+  return (
+    <ul>
+      {tasks.map(task => (
+        <li key={task.id}>
+          <Task
+            task={task}
+            onChange={onChangeTask}
+            onDelete={onDeleteTask}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Task({ task, onChange, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
+  let taskContent;
+  if (isEditing) {
+    taskContent = (
+      <>
+        <input
+          value={task.text}
+          onChange={e => {
+            onChange({
+              ...task,
+              text: e.target.value
+            });
+          }} />
+        <button onClick={() => setIsEditing(false)}>
+          Enregistrer
+        </button>
+      </>
+    );
+  } else {
+    taskContent = (
+      <>
+        {task.text}
+        <button onClick={() => setIsEditing(true)}>
+          Modifier
+        </button>
+      </>
+    );
+  }
+  return (
+    <label>
+      <input
+        type="checkbox"
+        checked={task.done}
+        onChange={e => {
+          onChange({
+            ...task,
+            done: e.target.checked
+          });
+        }}
+      />
+      {taskContent}
+      <button onClick={() => onDelete(task.id)}>
+        Supprimer
+      </button>
+    </label>
+  );
+}
+
+
+//-----------------------------------------
+// AddTask.js
+import { useState } from 'react';
+
+export default function AddTask({ onAddTask }) {
+  const [text, setText] = useState('');
+  return (
+    <>
+      <input
+        placeholder="Ajouter une tâche"
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <button onClick={() => {
+        setText('');
+        onAddTask(text);
+      }}>Ajouter</button>
+    </>
+  )
+}
+
+//-----------------------------------------
+// style.css
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  padding: 0;
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 22px;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+h3 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+h4 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+h5 {
+  margin-top: 0;
+  font-size: 14px;
+}
+
+h6 {
+  margin-top: 0;
+  font-size: 12px;
+}
+
+code {
+  font-size: 1.2em;
+}
+
+ul {
+  padding-inline-start: 20px;
+}
+
+button { margin: 5px; }
+li { list-style-type: none; }
+ul, li { margin: 0; padding: 0; }
+```
+
+##### **Exemple 3: Shopping cart** :
+
+```jsx
+// ShoppingCart.js
+import React, { useReducer } from "react";
+import { cartReducer } from "./cartReducer";
+import ProductList from "./ProductList";
+import Cart from "./Cart";
+import Total from "./Total";
+
+const ShoppingCart = () => {
+  const [cartState, dispatch] = useReducer(cartReducer, {
+    items: [],
+    total: 0,
+  });
+
+  const products = [
+    { id: 1, name: "Laptop", price: 1000 },
+    { id: 2, name: "Headphones", price: 200 },
+    { id: 3, name: "Keyboard", price: 150 },
+  ];
+
+  const handleAddToCart = (product) => {
+    dispatch({ type: "add_item", payload: product });
+  };
+
+  const handleRemoveItem = (id) => {
+    dispatch({ type: "remove_item", payload: id });
+  };
+
+  const handleUpdateQuantity = (id, quantity) => {
+    dispatch({ type: "update_quantity", payload: { id, quantity } });
+  };
+
+  const handleClearCart = () => {
+    dispatch({ type: "clear_cart" });
+  };
+
+  return (
+    <div style={{ padding: "20px" }}>
+      <h1>Shopping Cart</h1>
+      <ProductList products={products} onAddToCart={handleAddToCart} />
+      <Cart
+        items={cartState.items}
+        onRemoveItem={handleRemoveItem}
+        onUpdateQuantity={handleUpdateQuantity}
+        onClearCart={handleClearCart}
+      />
+      <Total total={cartState.total} />
+    </div>
+  );
+};
+
+export default ShoppingCart;
+
+//-------------------------------------------------------
+// ProductList.js
+import React from "react";
+
+const ProductList = ({ products, onAddToCart }) => {
+  return (
+    <div>
+      <h2>Products</h2>
+      <ul>
+        {products.map((product) => (
+          <li key={product.id} style={{ marginBottom: "10px" }}>
+            <strong>{product.name}</strong> - ${product.price}
+            <button
+              onClick={() => onAddToCart(product)}
+              style={{ marginLeft: "10px" }}
+            >
+              Add to Cart
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default ProductList;
+
+//-------------------------------------------------------
+// Cart.js
+import React from "react";
+
+const Cart = ({ items, onRemoveItem, onUpdateQuantity, onClearCart }) => {
+  return (
+    <div>
+      <h2>Cart</h2>
+      {items.length === 0 ? (
+        <p>Your cart is empty.</p>
+      ) : (
+        <div>
+          <ul>
+            {items.map((item) => (
+              <li key={item.id} style={{ marginBottom: "10px" }}>
+                <strong>{item.name}</strong> - ${item.price} x {item.quantity}
+                <button
+                  onClick={() => onRemoveItem(item.id)}
+                  style={{ marginLeft: "10px" }}
+                >
+                  Remove
+                </button>
+                <div style={{ marginTop: "5px" }}>
+                  <label>
+                    Quantity:{" "}
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        onUpdateQuantity(item.id, parseInt(e.target.value, 10))
+                      }
+                      style={{ width: "50px" }}
+                    />
+                  </label>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <button onClick={onClearCart} style={{ marginTop: "10px" }}>
+            Clear Cart
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Cart;
+
+// -----------------------------------------------------
+// cartReducer.js
+export const cartReducer = (state, action) => {
+  switch (action.type) {
+    case "add_item":
+      const existingItem = state.items.find(
+        (item) => item.id === action.payload.id
+      );
+      const updatedItems = existingItem
+        ? state.items.map((item) =>
+            item.id === action.payload.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        : [...state.items, { ...action.payload, quantity: 1 }];
+      return {
+        ...state,
+        items: updatedItems,
+        total: calculateTotal(updatedItems),
+      };
+
+    case "remove_item":
+      const filteredItems = state.items.filter(
+        (item) => item.id !== action.payload
+      );
+      return {
+        ...state,
+        items: filteredItems,
+        total: calculateTotal(filteredItems),
+      };
+
+    case "update_quantity":
+      const modifiedItems = state.items.map((item) =>
+        item.id === action.payload.id
+          ? { ...item, quantity: action.payload.quantity }
+          : item
+      );
+      return {
+        ...state,
+        items: modifiedItems,
+        total: calculateTotal(modifiedItems),
+      };
+
+    case "clear_cart":
+      return {
+        items: [],
+        total: 0,
+      };
+
+    default:
+      throw new Error(`Unknown action type: ${action.type}`);
+  }
+};
+
+// Fonction pour calculer le total du panier
+const calculateTotal = (items) =>
+  items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+
+
+
+//-------------------------------------------------------
+// Total.js
+import React from "react";
+
+const Total = ({ total }) => {
+  return (
+    <div style={{ marginTop: "20px" }}>
+      <strong>Total: ${total.toFixed(2)}</strong>
+    </div>
+  );
+};
+
+export default Total;
+
+
+```
+
+### useContext
+
+n/a
+
+### useId
+
+n/a
 
 ### Rest
 
