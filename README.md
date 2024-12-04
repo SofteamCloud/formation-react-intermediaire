@@ -1578,6 +1578,515 @@ const App = () => (
 export default App;
 ```
 
+### useID
+
+### **Définitions**
+
+`useId` est un Hook React qui génère un identifiant unique stable pour un composant. Il est particulièrement utile pour associer des attributs HTML comme `id` à des labels ou autres éléments interactifs dans des formulaires.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Accessibilité** :
+
+   - Associer des labels avec des champs de formulaire (`label` et `input`), ce qui est essentiel pour les utilisateurs de lecteurs d'écran.
+
+2. **Éviter les conflits d'ID** :
+
+   - Générer des identifiants uniques dans des composants réutilisables pour éviter les duplications.
+
+3. **Framework SSR (Server-Side Rendering)** :
+   - Garantir que les identifiants générés sont cohérents entre le serveur et le client pour éviter les problèmes d'hydratation.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple : Utilisation dans un formulaire pour l'accessibilité**
+
+```jsx
+import { useId } from "react";
+
+function PasswordField() {
+  const passwordHintId = useId();
+  return (
+    <>
+      <label>
+        Password:
+        <input type="password" aria-describedby={passwordHintId} />
+      </label>
+      <p id={passwordHintId}>
+        The password should contain at least 18 characters
+      </p>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <>
+      <h2>Choose password</h2>
+      <PasswordField />
+      <h2>Confirm password</h2>
+      <PasswordField />
+    </>
+  );
+}
+```
+
+## React pour les cas spéciaux
+
+### Portails (Portals)
+
+### **Définitions**
+
+`createPortal` est une fonction fournie par React qui permet de rendre un composant enfant dans un DOM différent de celui de son parent. Cela est utile pour créer des éléments comme des modals, des tooltips ou des menus déroulants qui doivent apparaître en dehors de la hiérarchie DOM du composant parent.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Modals et popups** :
+
+   - Lorsqu'un composant comme une boîte de dialogue ou une fenêtre modale doit être rendu au premier plan sans être restreint par le style ou le positionnement de ses parents.
+
+2. **Tooltips et menus contextuels** :
+
+   - Pour garantir que ces éléments s'affichent correctement en dehors des limitations de leurs conteneurs parent (par exemple, un `overflow: hidden`).
+
+3. **Gestion du z-index** :
+   - Pour éviter des conflits de style et de hiérarchie visuelle avec d'autres éléments.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 : Création d'une fenêtre modale**
+
+```jsx
+import React, { useState } from "react";
+// import ReactDOM from 'react-dom';
+
+// const ModalWithPortal = ({ isOpen, onClose, children }) => {
+//   if (!isOpen) return null;
+
+//   return ReactDOM.createPortal(
+//     <div
+//       style={{
+//         position: 'fixed',
+//         top: 0,
+//         left: 0,
+//         width: '100vw',
+//         height: '100vh',
+//         backgroundColor: 'rgba(0, 0, 0, 0.5)',
+//         display: 'flex',
+//         justifyContent: 'center',
+//         alignItems: 'center',
+//       }}
+//       onClick={onClose}
+//     >
+//       <div
+//         style={{
+//           backgroundColor: '#fff',
+//           padding: '20px',
+//           borderRadius: '10px',
+//         }}
+//         onClick={(e) => e.stopPropagation()}
+//       >
+//         <button onClick={onClose} style={{ float: 'right' }}>
+//           &times;
+//         </button>
+//         {children}
+//       </div>
+//     </div>,
+//     document.body // Point d'insertion dans le DOM
+//   );
+// };
+
+const ModalWithNoPortal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "#fff",
+          padding: "20px",
+          borderRadius: "10px",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button onClick={onClose} style={{ float: "right" }}>
+          &times;
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const App = () => {
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  return (
+    <div
+      style={{
+        width: "400px",
+        height: "400px",
+        border: "1px solid #222",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <h1>Bienvenue sur mon application</h1>
+      <button onClick={() => setModalOpen(true)}>Ouvrir la modale</button>
+      <ModalWithNoPortal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+      >
+        <h2>Contenu de la modale</h2>
+        <p>Ceci est une fenêtre modale rendue avec React Portals.</p>
+      </ModalWithNoPortal>
+    </div>
+  );
+};
+
+export default App;
+```
+
+#### **Exemple 2 : Menu contextuel**
+
+```jsx
+import React, { useState } from "react";
+import ReactDOM from "react-dom";
+
+const ContextMenu = ({ x, y, options, onClose }) => {
+  return ReactDOM.createPortal(
+    <ul
+      style={{
+        position: "absolute",
+        top: y,
+        left: x,
+        backgroundColor: "#fff",
+        border: "1px solid #ccc",
+        listStyle: "none",
+        padding: "10px",
+        borderRadius: "5px",
+      }}
+      onClick={onClose}
+    >
+      {options.map((option, index) => (
+        <li key={index} style={{ padding: "5px 10px", cursor: "pointer" }}>
+          {option}
+        </li>
+      ))}
+    </ul>,
+    document.body
+  );
+};
+
+const Test = () => {
+  const [menu, setMenu] = useState({ isOpen: false, x: 0, y: 0 });
+
+  const openMenu = (e) => {
+    e.preventDefault();
+    setMenu({ isOpen: true, x: e.pageX, y: e.pageY });
+  };
+
+  const closeMenu = () => setMenu({ isOpen: false, x: 0, y: 0 });
+
+  return (
+    <div
+      onContextMenu={openMenu}
+      style={{ width: "100vw", height: "100vh", backgroundColor: "#f0f0f0" }}
+    >
+      <h1>Clic droit pour ouvrir le menu contextuel</h1>
+      {menu.isOpen && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          options={["Option 1", "Option 2", "Option 3"]}
+          onClose={closeMenu}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Test;
+```
+
+### Gestion des erreurs (ErrorBoundary)
+
+### **Définitions**
+
+Un `ErrorBoundary` (limite de gestion des erreurs) est un composant React qui capture les erreurs JavaScript provenant de son arborescence de composants enfants, empêchant ainsi l'application de planter. Les `ErrorBoundary` s'implémentent en utilisant la méthode de cycle de vie `componentDidCatch` et `getDerivedStateFromError`. Ils ne fonctionnent que pour les erreurs au sein des composants React.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Empêcher un plantage global** :
+
+   - Protéger l'expérience utilisateur en isolant les erreurs à des parties spécifiques de l'application.
+
+2. **Afficher un message d'erreur convivial** :
+
+   - Remplacer un écran blanc ou un crash complet par un message explicatif ou une alternative.
+
+3. **Environnement de production** :
+
+   - Collecter les erreurs et les enregistrer dans des outils comme Sentry ou LogRocket.
+
+4. **Isoler des sections à risque** :
+   - Lors de l'intégration de bibliothèques tierces ou de composants complexes susceptibles de générer des erreurs.
+
+### **Limites**
+
+Ne capture pas les erreurs :
+
+- Dans les gestionnaires d'événements.
+- En dehors des composants React (par exemple, dans des callbacks asynchrones).
+- Lors du rendu côté serveur (SSR).
+
+---
+
+### **Exemple concret : Gestion d'erreurs avec un message d'erreur personnalisé**
+
+#### **Création d'un `ErrorBoundary`**
+
+```jsx
+// Test.jsx
+
+import React, { useEffect } from "react";
+import ErrorBoundary from "./ErrorBoundary";
+
+// Composant susceptible de générer une erreur
+const BuggyComponent = () => {
+  const handleClick = () => {
+    throw new Error("Un bug s'est produit !");
+  };
+
+  // useEffect(() => {
+  //   throw new Error("Un bug s'est produit !");
+  // }, []);
+
+  return (
+    <div>
+      <button onClick={handleClick}>
+        Cliquez ici pour provoquer une erreur
+      </button>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Corrupti cumque
+        eos exercitationem ullam soluta. Consequuntur perspiciatis nemo
+        repellendus eaque officia molestiae labore cum temporibus, doloremque
+        sequi, eos culpa saepe sunt.
+      </p>
+    </div>
+  );
+};
+
+const Test = () => {
+  return (
+    <div>
+      <h1>Application React avec ErrorBoundary</h1>
+      <ErrorBoundary>
+        <BuggyComponent />
+      </ErrorBoundary>
+    </div>
+  );
+};
+
+export default Test;
+
+// -----------------------------------------------------------------------
+// ErrorBoundary.jsx
+
+import React from "react";
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    // Met à jour l'état pour afficher l'interface utilisateur de secours
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    // Enregistre l'erreur et ses détails (par exemple, via un service de logs)
+    console.error("Erreur capturée par ErrorBoundary :", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Affiche une interface utilisateur de secours
+      return <h1>Oups ! Une erreur est survenue.</h1>;
+    }
+
+    // Rendre les enfants normalement
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
+
+```
+
+### Suspense & lazy
+
+### **Définitions**
+
+`React.lazy` est une fonction qui permet de charger un composant de manière asynchrone uniquement lorsqu'il est nécessaire. Cela permet d'améliorer les performances en scindant le code (code-splitting) et en réduisant la taille initiale de l'application. Il est souvent utilisé avec `React.Suspense` pour afficher une interface utilisateur pendant le chargement.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Chargement conditionnel de composants** :
+
+   - Lorsqu'un composant ou une partie de l'interface utilisateur est rarement utilisée ou dépend d'une interaction utilisateur.
+
+2. **Optimisation des performances** :
+
+   - Scinder le code pour éviter de charger l'intégralité de l'application dès le départ.
+
+3. **Applications à grande échelle** :
+   - Lorsque plusieurs routes ou fonctionnalités sont indépendantes les unes des autres, permettant de charger uniquement les modules nécessaires.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 : Chargement différé d'un composant avec React.lazy**
+
+```jsx
+// App.jsx
+
+import { useState, Suspense, lazy } from 'react';
+import Loading from './Loading.js';
+
+const MarkdownPreview = lazy(() => delayForDemo(import('./MarkdownPreview.js')));
+
+export default function MarkdownEditor() {
+  const [showPreview, setShowPreview] = useState(false);
+  const [markdown, setMarkdown] = useState('Salut **tout le monde** !');
+  return (
+    <>
+      <textarea value={markdown} onChange={e => setMarkdown(e.target.value)} />
+      <label>
+        <input type="checkbox" checked={showPreview} onChange={e => setShowPreview(e.target.checked)} />
+        Afficher l’aperçu
+      </label>
+      <hr />
+      {showPreview && (
+        <Suspense fallback={<Loading />}>
+          <h2>Aperçu</h2>
+          <MarkdownPreview markdown={markdown} />
+        </Suspense>
+      )}
+    </>
+  );
+}
+
+// Ajouter un délai fixe pour voir l’état de chargement
+function delayForDemo(promise) {
+  return new Promise(resolve => {
+    setTimeout(resolve, 2000);
+  }).then(() => promise);
+}
+
+//--------------------------------------------------
+// Loading.jsx
+export default function Loading() {
+  return <p><i>Chargement...</i></p>;
+}
+
+//--------------------------------------------------
+// Loading.jsx
+import { Remarkable } from 'remarkable'; // npm install remarkable
+
+const md = new Remarkable();
+
+export default function MarkdownPreview({ markdown }) {
+  return (
+    <div
+      className="content"
+      dangerouslySetInnerHTML={{__html: md.render(markdown)}}
+    />
+  );
+}
+```
+
+#### **Exemple 2 : Utilisation de React.lazy dans une application avec plusieurs routes**
+
+```jsx
+import React, { Suspense } from "react";
+import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+
+// Importation lazy des pages
+const Home = React.lazy(() => import("./Home"));
+const About = React.lazy(() => import("./About"));
+const Contact = React.lazy(() => import("./Contact"));
+
+const App = () => {
+  return (
+    <Router>
+      <nav>
+        <Link to="/">Accueil</Link> | <Link to="/about">À propos</Link> |{" "}
+        <Link to="/contact">Contact</Link>
+      </nav>
+
+      <Suspense fallback={<p>Chargement de la page...</p>}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
+      </Suspense>
+    </Router>
+  );
+};
+
+export default App;
+
+// Home.js
+export default function Home() {
+  return <h1>Page d'accueil</h1>;
+}
+
+// About.js
+export default function About() {
+  return <h1>À propos</h1>;
+}
+
+// Contact.js
+export default function Contact() {
+  return <h1>Contactez-nous</h1>;
+```
+
 ### Rest
 
 **coming soon**
+
+```
+
+```
+
+```
+
+```
