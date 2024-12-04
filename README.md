@@ -12,7 +12,7 @@
    - [useReducer](#usereducer)
    - [useContext](#usecontext)
    - [useId](#useid)
-   - [Autres hooks](#autres-hooks)
+   - [Reste des hooks](#reste-des-hooks)
 4. [React pour les cas spéciaux](#react-pour-les-cas-speciaux)
    - [Portails (Portals)](#portails-portals)
    - [Gestion des erreurs (ErrorBoundary)](#gestion-des-erreurs-errorboundary)
@@ -1635,6 +1635,10 @@ export default function App() {
 }
 ```
 
+### Reste des hooks
+
+Regarder React doc https://fr.react.dev/reference/react/hooks
+
 ## React pour les cas spéciaux
 
 ### Portails (Portals)
@@ -2081,12 +2085,6 @@ export default function Contact() {
 
 ### Rest
 
+```
 **coming soon**
-
-```
-
-```
-
-```
-
 ```
