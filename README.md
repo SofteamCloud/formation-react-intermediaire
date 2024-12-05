@@ -2083,6 +2083,295 @@ export default function Contact() {
   return <h1>Contactez-nous</h1>;
 ```
 
+## Gestion d'état global
+
+### Zustand
+
+### **Définitions**
+
+`zustand` est une bibliothèque légère pour la gestion d'état dans les applications React. Elle permet de créer un magasin (store) global ou local, avec une API simple et performante. Contrairement à des solutions comme Redux, `zustand` est plus minimaliste et ne nécessite pas de boilerplate supplémentaire (comme des actions ou des reducers).
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Gestion d'état global ou local** :
+
+   - Pour partager des données ou des états entre plusieurs composants sans avoir besoin de prop-drilling.
+
+2. **Applications légères** :
+
+   - Idéal pour des projets qui ne nécessitent pas la complexité de Redux ou de Context API.
+
+3. **Performances** :
+
+   - Pour une gestion d'état rapide avec un impact minimal sur le rendu des composants.
+
+4. **Cas complexes** :
+   - Utile pour gérer des cas spécifiques comme des WebSockets, des états asynchrones ou des formulaires complexes.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 : Compteur global avec Zustand**
+
+```jsx
+import create from "zustand";
+
+const useStore = create((set) => ({
+  count: 0,
+  increment: () => set((state) => ({ count: state.count + 1 })),
+  decrement: () => set((state) => ({ count: state.count - 1 })),
+}));
+
+const Counter = () => {
+  const { count, increment, decrement } = useStore();
+  return (
+    <div>
+      <h1>Compteur : {count}</h1>
+      <button onClick={increment}>+1</button>
+      <button onClick={decrement}>-1</button>
+    </div>
+  );
+};
+
+export default Counter;
+```
+
+#### **Exemple 2 : Compteur global avec Zustand**
+
+```jsx
+// -----------------------------------------------------
+// cartStore
+
+import { create } from "zustand";
+
+export const useCartStore = create((set) => ({
+  items: [],
+  total: 0,
+
+  // Ajouter un produit
+  addItem: (product) =>
+    set((state) => {
+      const existingItem = state.items.find((item) => item.id === product.id);
+
+      const updatedItems = existingItem
+        ? state.items.map((item) =>
+            item.id === product.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        : [...state.items, { ...product, quantity: 1 }];
+
+      return {
+        items: updatedItems,
+        total: calculateTotal(updatedItems),
+      };
+    }),
+
+  // Supprimer un produit
+  removeItem: (id) =>
+    set((state) => {
+      const filteredItems = state.items.filter((item) => item.id !== id);
+      return {
+        items: filteredItems,
+        total: calculateTotal(filteredItems),
+      };
+    }),
+
+  // Mettre à jour la quantité d'un produit
+  updateQuantity: (id, quantity) =>
+    set((state) => {
+      const updatedItems = state.items.map((item) =>
+        item.id === id ? { ...item, quantity } : item
+      );
+      return {
+        items: updatedItems,
+        total: calculateTotal(updatedItems),
+      };
+    }),
+
+  // Vider le panier
+  clearCart: () => set({ items: [], total: 0 }),
+}));
+
+// Fonction pour calculer le total du panier
+const calculateTotal = (items) =>
+  items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+
+//-------------------------------------------------------
+// ShoppingCart.js
+
+import ProductList from "./ProductList";
+import Cart from "./Cart";
+import Total from "./Total";
+
+const ShoppingCart = () => {
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-center mb-6">Shopping Cart</h1>
+      <div className="grid gap-8 md:grid-cols-2">
+        <ProductList />
+        <Cart />
+      </div>
+      <Total />
+    </div>
+  );
+};
+
+export default ShoppingCart;
+
+//-------------------------------------------------------
+// ProductList.js
+
+import Product from "./Product";
+import { useCartStore } from "./store";
+
+const ProductList = () => {
+  const addItem = useCartStore((state) => state.addItem);
+
+  const products = [
+    { id: 1, name: "Laptop", price: 1000 },
+    { id: 2, name: "Headphones", price: 200 },
+    { id: 3, name: "Keyboard", price: 150 },
+  ];
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-gray-700 mb-4">Products</h2>
+      <ul className="space-y-4">
+        {products.map((product) => (
+          <Product product={product} key={product.id} />
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default ProductList;
+
+//-------------------------------------------------------
+// Product.js
+
+import { useCartStore } from "./store";
+
+const Product = ({ product }) => {
+  const addItem = useCartStore((state) => state.addItem);
+
+  return (
+    <li className="group block overflow-hidden border border-gray-200 rounded-lg">
+      {/* <div className="relative h-64 sm:h-72">
+        <img
+          src={`https://source.unsplash.com/featured/?${product.name}`}
+          alt={product.name}
+          className="absolute inset-0 h-full w-full object-cover opacity-100 group-hover:opacity-80"
+        />
+      </div> */}
+      <div className="p-4 bg-white">
+        <h3 className="text-lg text-gray-700 group-hover:underline">
+          {product.name}
+        </h3>
+        <p className="mt-1 text-gray-900 font-bold">${product.price}</p>
+        <button
+          onClick={() => addItem(product)}
+          className="mt-3 w-full bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-600"
+        >
+          Add to Cart
+        </button>
+      </div>
+    </li>
+  );
+};
+
+export default Product;
+
+//-------------------------------------------------------
+// Cart.js
+import { useCartStore } from "./store";
+
+const Cart = () => {
+  const { items, removeItem, updateQuantity, clearCart } = useCartStore();
+
+  return (
+    <div className="p-4 border border-gray-200 bg-white rounded-lg">
+      <h2 className="text-xl font-semibold text-gray-700 mb-4">Cart</h2>
+      {items.length === 0 ? (
+        <p className="text-gray-500">Your cart is empty.</p>
+      ) : (
+        <div className="space-y-4">
+          <ul className="space-y-4">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-4 border-b pb-4"
+              >
+                <div className="flex items-center gap-4">
+                  <img
+                    src={`https://source.unsplash.com/featured/?${item.name}`}
+                    alt={item.name}
+                    className="h-16 w-16 rounded object-cover"
+                  />
+                  <div>
+                    <h3 className="text-sm text-gray-900">{item.name}</h3>
+                    <p className="text-gray-600">
+                      ${item.price} x {item.quantity}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      updateQuantity(item.id, parseInt(e.target.value, 10))
+                    }
+                    className="w-12 border-gray-300 rounded text-center"
+                  />
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="text-red-500 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={clearCart}
+            className="block w-full bg-gray-700 text-white py-2 rounded hover:bg-gray-600"
+          >
+            Clear Cart
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Cart;
+
+//-------------------------------------------------------
+// Total.js
+import { useCartStore } from "./store";
+
+const Total = () => {
+  const total = useCartStore((state) => state.total);
+
+  return (
+    <div className="mt-6 text-center">
+      <strong className="text-lg">Total: ${total.toFixed(2)}</strong>
+    </div>
+  );
+};
+
+export default Total;
+
+```
+
 ### Rest
 
 ```
