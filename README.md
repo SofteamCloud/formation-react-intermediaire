@@ -24,11 +24,11 @@
    - [React Router DOM](#react-router-dom)
    - [React Query](#react-query)
    - [React Hook Form](#react-hook-form)
-7. [Rendu côté serveur](#rendu-cote-serveur)
+7. [TypeScript](#typescript)
+8. [Tests](#tests)
+9. [Rendu côté serveur](#rendu-cote-serveur)
    - [Next.js](#nextjs)
    - [Remix](#remix)
-8. [TypeScript](#typescript)
-9. [Tests](#tests)
 
 ## Présentation
 
@@ -2308,11 +2308,11 @@ const Cart = () => {
                 className="flex items-center justify-between gap-4 border-b pb-4"
               >
                 <div className="flex items-center gap-4">
-                  <img
+                  {/*<img
                     src={`https://source.unsplash.com/featured/?${item.name}`}
                     alt={item.name}
                     className="h-16 w-16 rounded object-cover"
-                  />
+                  /> */}
                   <div>
                     <h3 className="text-sm text-gray-900">{item.name}</h3>
                     <p className="text-gray-600">
@@ -2372,8 +2372,876 @@ export default Total;
 
 ```
 
+### Redux Toolkit
+
+### **Définitions**
+
+**Redux** Redux est une bibliothèque JavaScript open-source utilisée pour la gestion de l’état des applications. Elle est principalement utilisée avec des bibliothèques comme React ou Angular pour construire des interfaces utilisateur. Redux permet de centraliser l’état de l’application dans un store unique, ce qui facilite la gestion et le suivi des changements d’état.
+
+**Redux Toolkit** est une bibliothèque officielle de gestion d'état pour Redux. Elle simplifie la configuration de Redux en fournissant des outils modernes pour créer un store, définir des slices d'état, et gérer des actions de manière concise et efficace. Redux Toolkit réduit le boilerplate souvent associé à Redux classique tout en offrant de meilleures performances et une expérience de développement améliorée.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Gestion d'état complexe** :
+
+   - Idéal pour les grandes applications où plusieurs fonctionnalités nécessitent un partage d'état global.
+
+2. **Applications évolutives** :
+
+   - Utile pour structurer des applications en modules bien définis grâce aux slices.
+
+3. **Simplification du développement Redux** :
+
+   - Pour éviter le boilerplate lourd de Redux classique (comme les fichiers d'action, les reducers, etc.).
+
+4. **Fonctionnalités avancées** :
+   - Fournit un middleware comme `createAsyncThunk` pour gérer les actions asynchrones (par exemple, les appels API).
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 : Configuration de Redux Toolkit avec un compteur simple**
+
+```javascript
+// App.jsx
+
+import { useSelector, useDispatch } from "react-redux";
+import { increment, decrement, reset } from "./store/counterSlice";
+import ShoppingCart from "./ShoppingCartRedux/ShoppingCart";
+
+function App() {
+  const count = useSelector((state) => state.counter.value);
+  const dispatch = useDispatch();
+
+  return (
+    <div>
+      <h1>Compteur : {count}</h1>
+      <br />
+      <span className="inline-flex -space-x-px overflow-hidden rounded-md border bg-white shadow-sm">
+        <button
+          onClick={() => dispatch(decrement())}
+          className="inline-block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:relative"
+        >
+          Incrementer
+        </button>
+
+        <button
+          onClick={() => dispatch(reset())}
+          className="inline-block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:relative"
+        >
+          Reset
+        </button>
+
+        <button
+          onClick={() => dispatch(increment())}
+          className="inline-block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:relative"
+        >
+          Decrementer
+        </button>
+      </span>
+
+      <hr />
+      <ShoppingCart />
+    </div>
+  );
+}
+
+export default App;
+
+//-------------------------------------------------
+// main.jsx
+
+import store from "./store/store.js";
+import { Provider } from "react-redux";
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <Provider store={store}>
+      <App />
+    </Provider>
+  </StrictMode>
+
+//-------------------------------------------------
+// counterSlice.js
+
+import { createSlice } from "@reduxjs/toolkit";
+
+const counterSlice = createSlice({
+  name: "counter",
+  initialState: { value: 0 },
+  reducers: {
+    increment: (state) => {
+      state.value += 1;
+    },
+    decrement: (state) => {
+      state.value -= 1;
+    },
+    reset: (state) => {
+      state.value = 0;
+    },
+  },
+});
+
+console.log({ counterSlice });
+
+export const { increment, decrement, reset } = counterSlice.actions;
+export default counterSlice.reducer;
+
+//-------------------------------------------------
+// store.js
+
+import { configureStore } from "@reduxjs/toolkit";
+import counterReducer from "./counterSlice";
+import cartReducer from "./cartSlice";
+
+export const store = configureStore({
+  reducer: {
+    counter: counterReducer,
+    cart: cartReducer,
+  },
+});
+export default store;
+
+//-------------------------------------------------
+// ShoppingCart.jsx
+
+import ProductList from "./ProductList";
+import Cart from "./Cart";
+import Total from "./Total";
+
+const ShoppingCart = () => {
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-center mb-6">Shopping Cart</h1>
+      <div className="grid gap-8 md:grid-cols-2">
+        <ProductList />
+        <Cart />
+      </div>
+      <Total />
+    </div>
+  );
+};
+
+export default ShoppingCart;
+
+
+//-------------------------------------------------
+// ProductList.jsx
+
+import ProductCard from "./ProductCard";
+
+const ProductList = () => {
+  const products = [
+    { id: 1, name: "Laptop", price: 1000 },
+    { id: 2, name: "Headphones", price: 200 },
+    { id: 3, name: "Keyboard", price: 150 },
+  ];
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-gray-700 mb-4">Products</h2>
+      <ul className="space-y-4">
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default ProductList;
+
+
+//-------------------------------------------------
+// ProductCard.jsx
+
+import { useDispatch } from "react-redux";
+import { addItem } from "../store/cartSlice";
+
+const ProductCard = ({ product }) => {
+  const dispatch = useDispatch();
+
+  return (
+    <li className="group block overflow-hidden border border-gray-200 rounded-lg">
+      {/* <div className="relative h-64 sm:h-72">
+        <img
+          src={`https://source.unsplash.com/featured/?${product.name}`}
+          alt={product.name}
+          className="absolute inset-0 h-full w-full object-cover opacity-100 group-hover:opacity-80"
+        />
+      </div> */}
+      <div className="p-4 bg-white">
+        <h3 className="text-lg text-gray-700 group-hover:underline">
+          {product.name}
+        </h3>
+        <p className="mt-1 text-gray-900 font-bold">${product.price}</p>
+        <button
+          onClick={() => dispatch(addItem(product))}
+          className="mt-3 w-full bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-600"
+        >
+          Add to Cart
+        </button>
+      </div>
+    </li>
+  );
+};
+
+export default ProductCard;
+
+
+//-------------------------------------------------
+// Cart.jsx
+
+import { useSelector, useDispatch } from "react-redux";
+import { clearCart } from "../store/cartSlice";
+import CartItem from "./CartItem";
+
+const Cart = () => {
+  const items = useSelector((state) => state.cart.items);
+  const dispatch = useDispatch();
+
+  return (
+    <div className="p-4 border border-gray-200 bg-white rounded-lg">
+      <h2 className="text-xl font-semibold text-gray-700 mb-4">Cart</h2>
+      {items.length === 0 ? (
+        <p className="text-gray-500">Your cart is empty.</p>
+      ) : (
+        <div className="space-y-4">
+          <ul className="space-y-4">
+            {items.map((item) => (
+              <CartItem key={item.id} item={item} />
+            ))}
+          </ul>
+          <button
+            onClick={() => dispatch(clearCart())}
+            className="block w-full bg-gray-700 text-white py-2 rounded hover:bg-gray-600"
+          >
+            Clear Cart
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Cart;
+
+
+//-------------------------------------------------
+// CartItem.jsx
+
+import { useDispatch } from "react-redux";
+import { removeItem, updateQuantity } from "../store/cartSlice";
+
+const CartItem = ({ item }) => {
+  const dispatch = useDispatch();
+
+  console.log("cartItem");
+
+  return (
+    <li className="flex items-center justify-between gap-4 border-b pb-4">
+      <div className="flex items-center gap-4">
+        {/* <img
+          src={`https://source.unsplash.com/featured/?${item.name}`}
+          alt={item.name}
+          className="h-16 w-16 rounded object-cover"
+        /> */}
+        <div>
+          <h3 className="text-sm text-gray-900">{item.name}</h3>
+          <p className="text-gray-600">
+            ${item.price} x {item.quantity}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          value={item.quantity}
+          onChange={(e) =>
+            dispatch(
+              updateQuantity({
+                id: item.id,
+                quantity: parseInt(e.target.value, 10),
+              })
+            )
+          }
+          className="w-12 border-gray-300 rounded text-center"
+        />
+        <button
+          onClick={() => dispatch(removeItem(item.id))}
+          className="text-red-500 hover:underline"
+        >
+          Remove
+        </button>
+      </div>
+    </li>
+  );
+};
+
+export default CartItem;
+
+
+
+//-------------------------------------------------
+// Total.jsx
+
+import { useSelector } from "react-redux";
+
+const Total = () => {
+  const totalPrice = useSelector((state) => state.cart.total);
+
+  return (
+    <div className="p-4 border border-gray-200 bg-gray-50 rounded-lg">
+      <h2 className="text-lg font-semibold text-gray-700">Total</h2>
+      <p className="text-xl font-bold text-gray-900 mt-2">
+        ${totalPrice.toFixed(2)}
+      </p>
+    </div>
+  );
+};
+
+export default Total;
+
+
+//-------------------------------------------------
+// cartSlice.js
+
+import { createSlice } from "@reduxjs/toolkit";
+
+// Fonction utilitaire pour calculer le total
+const calculateTotal = (items) => {
+  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+};
+
+const initialState = {
+  items: [],
+  total: 0,
+};
+
+const cartSlice = createSlice({
+  name: "cart",
+  initialState,
+  reducers: {
+    addItem(state, action) {
+      const item = state.items.find((i) => i.id === action.payload.id);
+
+      if (item) {
+        item.quantity += 1;
+      } else {
+        state.items.push({ ...action.payload, quantity: 1 });
+      }
+
+      // Utilisation de la fonction calculateTotal
+      state.total = calculateTotal(state.items);
+    },
+
+    removeItem(state, action) {
+      const itemIndex = state.items.findIndex((i) => i.id === action.payload);
+
+      if (itemIndex !== -1) {
+        state.items.splice(itemIndex, 1);
+      }
+
+      // Utilisation de la fonction calculateTotal
+      state.total = calculateTotal(state.items);
+    },
+
+    updateQuantity(state, action) {
+      const { id, quantity } = action.payload;
+      const item = state.items.find((i) => i.id === id);
+
+      if (item) {
+        item.quantity = quantity > 0 ? quantity : 1; // Assurez-vous que la quantité est toujours positive
+      }
+
+      // Utilisation de la fonction calculateTotal
+      state.total = calculateTotal(state.items);
+    },
+
+    clearCart(state) {
+      state.items = [];
+      state.total = 0; // Réinitialisation directe
+    },
+  },
+});
+
+export const { addItem, removeItem, updateQuantity, clearCart } = cartSlice.actions;
+export default cartSlice.reducer;
+```
+
+## Écosystème de librairies
+
+### React Router DOM
+
+### **Définitions**
+
+**React Router DOM** est une bibliothèque standard pour la gestion du routage dans les applications React. Elle permet de créer des interfaces utilisateur multi-pages en gérant la navigation entre différentes vues ou "routes" sans recharger la page. Les URL de l'application reflètent ainsi son état, ce qui est essentiel pour des applications modernes.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Applications multi-pages** :
+
+   - Lorsque vous devez organiser votre application en différentes sections accessibles via des URL uniques (exemple : `/home`, `/about`, `/contact`).
+
+2. **Routage dynamique** :
+
+   - Pour des contenus ou des routes basés sur des paramètres (exemple : `/product/:id`).
+
+3. **Applications avec navigation complexe** :
+
+   - Lorsque vous devez gérer des scénarios avancés comme des routes protégées, des redirections, ou des animations entre les pages.
+
+4. **SEO et partage de contenu** :
+   - Les URL uniques permettent une meilleure optimisation pour les moteurs de recherche et un partage de contenu simplifié.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 :**
+
+```javascript
+// RouterWithRoutes.jsx
+import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import Home from "./Home";
+import About from "./About";
+import Contact from "./Contact";
+import NoPage from "./NoPage";
+
+const RouterWithRoutes = () => {
+  return (
+    <Router>
+      <nav>
+        <Link to="/">Accueil</Link> | <Link to="/about">À propos</Link> |{" "}
+        <Link to="/contact">Contact</Link>
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="*" element={<NoPage />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default RouterWithRoutes;
+
+//---------------------------------------------------
+// RouterWithRoutes.jsx
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Home from "./Home";
+import About from "./About";
+import Contact from "./Contact";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Home />,
+  },
+  {
+    path: "/about",
+    element: <About />,
+  },
+  {
+    path: "/Contact",
+    element: <Contact />,
+  },
+]);
+
+const RouterWithDataRoutes = () => <RouterProvider router={router} />;
+
+export default RouterWithDataRoutes;
+
+//---------------------------------------------------
+// Home.jsx
+export default function Home() {
+  return <h1>{`Page d'accueil`}</h1>;
+}
+
+
+//---------------------------------------------------
+// About.jsx
+export default function About() {
+  return <h1>{`À propos`}</h1>;
+}
+
+
+//---------------------------------------------------
+// Contact.jsx
+export default function Contact() {
+  return <h1>Contactez-nous</h1>;
+}
+```
+
+#### **Exemple 2**
+
+```jsx
+//---------------------------------------------------
+// blogData.js
+export const blogPosts = [
+  {
+    id: 1,
+    title: "React Router Basics",
+    category: "React",
+    content: "Learn the basics of React Router.",
+  },
+  {
+    id: 2,
+    title: "Advanced React Router",
+    category: "React",
+    content: "Deep dive into React Router features.",
+  },
+  {
+    id: 3,
+    title: "Node.js Introduction",
+    category: "Node",
+    content: "Introduction to Node.js fundamentals.",
+  },
+  {
+    id: 4,
+    title: "Building APIs with Express",
+    category: "Node",
+    content: "Learn to build APIs using Express.js.",
+  },
+  {
+    id: 5,
+    title: "CSS Grid vs Flexbox",
+    category: "CSS",
+    content: "When to use Grid or Flexbox.",
+  },
+  {
+    id: 6,
+    title: "Tailwind CSS Setup",
+    category: "CSS",
+    content: "How to set up Tailwind in your project.",
+  },
+  {
+    id: 7,
+    title: "JavaScript Closures",
+    category: "JavaScript",
+    content: "Understanding closures in JavaScript.",
+  },
+  {
+    id: 8,
+    title: "Async/Await in JS",
+    category: "JavaScript",
+    content: "Handle async operations effectively.",
+  },
+];
+
+
+
+//---------------------------------------------------
+// Main.jsx
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./Router.jsx";
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <RouterProvider router={router} />
+  </StrictMode>
+);
+
+//---------------------------------------------------
+// Router.jsx
+import { createBrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
+import BlogList from "./blog/BlogList.jsx";
+import BlogDetail from "./blog/BlogDetail.jsx";
+import "./index.css";
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+    children: [
+      { index: true, element: <BlogList /> },
+      { path: "blog/:id", element: <BlogDetail /> },
+    ],
+  },
+]);
+
+
+//---------------------------------------------------
+// App.jsx
+import { Outlet } from "react-router-dom";
+import Sidebar from "./blog/Sidebar";
+
+const App = () => {
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar />
+      <div className="flex-1 p-6 overflow-y-auto">
+        <h1 className="text-3xl font-bold mb-6">My Blog</h1>
+        <Outlet />
+      </div>
+    </div>
+  );
+};
+
+export default App;
+
+
+//---------------------------------------------------
+// Sidebar.jsx
+import { Link } from "react-router-dom";
+
+const Sidebar = () => {
+  return (
+    <div className="w-60 bg-white shadow-md p-4">
+      <h2 className="text-xl font-semibold mb-4">Categories</h2>
+      <ul className="space-y-2">
+        <li>
+          <Link to="/" className="text-blue-600 hover:underline">
+            All
+          </Link>
+        </li>
+        <li>
+          <Link to="/?category=React" className="text-blue-600 hover:underline">
+            React
+          </Link>
+        </li>
+        <li>
+          <Link to="/?category=Node" className="text-blue-600 hover:underline">
+            Node
+          </Link>
+        </li>
+        <li>
+          <Link to="/?category=CSS" className="text-blue-600 hover:underline">
+            CSS
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/?category=JavaScript"
+            className="text-blue-600 hover:underline"
+          >
+            JavaScript
+          </Link>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default Sidebar;
+
+
+//---------------------------------------------------
+// BlogList.jsx
+import { Link, useSearchParams } from "react-router-dom";
+import { blogPosts } from "./blogData";
+
+const BlogList = () => {
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get("category");
+
+  const filteredPosts = category
+    ? blogPosts.filter((post) => post.category === category)
+    : blogPosts;
+
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-4">
+        {category ? `Category: ${category}` : "All Blog Posts"}
+      </h2>
+      <ul className="space-y-4">
+        {filteredPosts.length > 0 ? (
+          filteredPosts.map((post) => (
+            <li key={post.id} className="p-4 bg-white shadow rounded">
+              <Link
+                to={`/blog/${post.id}`}
+                className="text-lg font-medium text-blue-600 hover:underline"
+              >
+                {post.title}
+              </Link>
+              <p className="text-gray-500">{post.category}</p>
+            </li>
+          ))
+        ) : (
+          <p className="text-gray-500">No posts found in this category.</p>
+        )}
+      </ul>
+    </div>
+  );
+};
+
+export default BlogList;
+
+
+
+//---------------------------------------------------
+// BlogDetail.jsx
+import { useParams, Link } from "react-router-dom";
+import { blogPosts } from "./blogData";
+
+const BlogDetail = () => {
+  const { id } = useParams();
+  const blog = blogPosts.find((post) => post.id === parseInt(id));
+
+  if (!blog) {
+    return <p className="text-gray-500">Blog post not found.</p>;
+  }
+
+  return (
+    <div className="p-4 bg-white shadow rounded">
+      <h2 className="text-2xl font-bold mb-4">{blog.title}</h2>
+      <p className="text-gray-500 mb-6">Category: {blog.category}</p>
+      <p className="text-gray-700">{blog.content}</p>
+      <Link to="/" className="mt-6 inline-block text-blue-600 hover:underline">
+        Back to Blog List
+      </Link>
+    </div>
+  );
+};
+
+export default BlogDetail;
+```
+
+### React Query
+
+### **Définitions**
+
+**React Query** est une bibliothèque puissante pour gérer l'état des données asynchrones dans les applications React. Elle simplifie la récupération, la mise en cache, la synchronisation et la mise à jour des données côté client tout en offrant des fonctionnalités comme les rechargements automatiques et le "background refetching".
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Gestion des données asynchrones** :
+
+   - Lorsque votre application effectue des requêtes vers une API REST ou GraphQL pour récupérer ou mettre à jour des données.
+
+2. **Mise en cache de données** :
+
+   - Idéal pour éviter des requêtes répétitives en mettant en cache les réponses API.
+
+3. **Synchronisation en temps réel** :
+
+   - Pratique pour des scénarios où les données doivent être régulièrement mises à jour (par exemple, un tableau de bord en direct).
+
+4. **Simplification du code** :
+
+   - Remplace les solutions classiques comme `useEffect` ou `Redux` pour les données asynchrones.
+
+5. **Gestion des erreurs réseau** :
+   - Gestion intégrée des erreurs avec des mécanismes de réessai et des états de chargement.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 : Fetching de données avec `useQuery`**
+
+```javascript
+import { useQuery } from "@tanstack/react-query";
+
+const fetchPosts = async () => {
+  const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+  if (!response.ok) {
+    throw new Error("Erreur lors de la récupération des publications");
+  }
+  return response.json();
+};
+
+const Posts = () => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["posts"],
+    queryFn: fetchPosts,
+    // refetchInterval: 1000, // Rechargement toutes les 5 secondes
+  });
+
+  if (isLoading) return <p>Chargement...</p>;
+  if (error) return <p>Erreur : {error.message}</p>;
+
+  return (
+    <ul>
+      {data.slice(0, 5).map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  );
+};
+
+export default Posts;
+```
+
+#### **Exemple 2 : Mutation avec useMutation**
+
+```jsx
+import React, { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const addUser = async (user) => {
+  const response = await fetch("https://jsonplaceholder.typicode.com/users", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(user),
+  });
+  if (!response.ok) {
+    throw new Error("Erreur lors de l'ajout de l'utilisateur");
+  }
+  return response.json();
+};
+
+const AddUser = () => {
+  const [name, setName] = useState("");
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: addUser, // Nouvelle syntaxe avec mutationFn
+    onSuccess: () => {
+      // Réactualiser la liste des utilisateurs
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate({ name });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Nom de l'utilisateur"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+      <button type="submit">Ajouter</button>
+      {mutation.isLoading && <p>Ajout en cours...</p>}
+      {mutation.isError && <p>Erreur : {mutation.error.message}</p>}
+      {mutation.isSuccess && <p>Utilisateur ajouté avec succès !</p>}
+    </form>
+  );
+};
+
+export default AddUser;
+```
+
 ### Rest
 
 ```
+
 **coming soon**
+
+```
+
+```
+
 ```
