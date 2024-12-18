@@ -26,7 +26,7 @@
    - [React Hook Form](#react-hook-form)
 7. [TypeScript](#typescript)
 8. [Tests](#tests)
-9. [Rendu côté serveur](#rendu-cote-serveur)
+9. [Aller plus loin](#rendu-cote-serveur)
    - [Next.js](#nextjs)
    - [Remix](#remix)
 
@@ -3233,6 +3233,8 @@ const AddUser = () => {
 
 export default AddUser;
 ```
+
+### React Hook Form
 
 ### Rest
 
