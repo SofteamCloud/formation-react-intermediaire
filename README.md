@@ -3236,6 +3236,202 @@ export default AddUser;
 
 ### React Hook Form
 
+### **Définitions**
+
+**React Hook Form** est une bibliothèque qui simplifie la gestion des formulaires dans React. Elle est conçue pour être légère, rapide et facile à intégrer dans vos projets. Elle utilise des hooks pour gérer l'état des formulaires, la validation, la soumission et l'affichage des erreurs sans avoir à manipuler l'état local des champs de manière complexe.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Formulaires complexes** :
+
+   - Lorsque vous devez gérer des formulaires avec plusieurs champs, validations, et erreurs sans que le code ne devienne difficile à maintenir.
+
+2. **Performances** :
+
+   - Idéale pour les formulaires avec un grand nombre de champs ou des mises à jour fréquentes, car elle minimise les rendus inutiles.
+
+3. **Validation côté client** :
+
+   - Si vous avez besoin de validation des champs en temps réel ou au moment de la soumission.
+
+4. **Gestion des erreurs de validation** :
+   - Pour afficher les erreurs de validation de manière simple, et les lier aux champs spécifiques.
+
+---
+
+### **Exemples concrets**
+
+#### **Exemple 1 : Formulaire simple avec `useForm`**
+
+```jsx
+import React from "react";
+import { useForm } from "react-hook-form";
+
+const Form = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  const onSubmit = (data) => {
+    console.log(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div>
+        <label>Nom</label>
+        <input {...register("name", { required: "Le nom est requis" })} />
+        {errors.name && <span>{errors.name.message}</span>}
+      </div>
+
+      <div>
+        <label>Email</label>
+        <input
+          {...register("email", {
+            required: "L'email est requis",
+            pattern: {
+              value: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/,
+              message: "Email invalide",
+            },
+          })}
+        />
+        {errors.email && <span>{errors.email.message}</span>}
+      </div>
+
+      <div>
+        <label>Mot de passe</label>
+        <input
+          type="password"
+          {...register("password", {
+            required: "Le mot de passe est requis",
+            minLength: {
+              value: 6,
+              message: "Le mot de passe doit avoir au moins 6 caractères",
+            },
+          })}
+        />
+        {errors.password && <span>{errors.password.message}</span>}
+      </div>
+
+      <button type="submit">Soumettre</button>
+    </form>
+  );
+};
+
+export default Form;
+```
+
+#### **Exemple 2 : Utilisation de Controller pour des composants contrôlés**
+
+```jsx
+import React from "react";
+import { useForm, Controller } from "react-hook-form";
+import { TextField, Button, Typography, Box } from "@mui/material";
+
+const MUIForm = () => {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  const onSubmit = (data) => {
+    console.log(data);
+  };
+
+  return (
+    <Box
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
+      sx={{
+        maxWidth: 400,
+        mx: "auto",
+        mt: 4,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+      }}
+    >
+      <Typography variant="h5" textAlign="center">
+        Formulaire avec MUI
+      </Typography>
+
+      {/* Champ Nom */}
+      <Controller
+        name="name"
+        control={control}
+        rules={{ required: "Le nom est requis" }}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Nom"
+            variant="outlined"
+            error={!!errors.name}
+            helperText={errors.name?.message}
+          />
+        )}
+      />
+
+      {/* Champ Email */}
+      <Controller
+        name="email"
+        control={control}
+        rules={{
+          required: "L'email est requis",
+          pattern: {
+            value: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/,
+            message: "Email invalide",
+          },
+        }}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Email"
+            variant="outlined"
+            error={!!errors.email}
+            helperText={errors.email?.message}
+          />
+        )}
+      />
+
+      {/* Champ Mot de passe */}
+      <Controller
+        name="password"
+        control={control}
+        rules={{
+          required: "Le mot de passe est requis",
+          minLength: {
+            value: 6,
+            message: "Le mot de passe doit contenir au moins 6 caractères",
+          },
+        }}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            type="password"
+            label="Mot de passe"
+            variant="outlined"
+            error={!!errors.password}
+            helperText={errors.password?.message}
+          />
+        )}
+      />
+
+      {/* Bouton Soumettre */}
+      <Button variant="contained" color="primary" type="submit">
+        Soumettre
+      </Button>
+    </Box>
+  );
+};
+
+export default MUIForm;
+```
+
 ### Rest
 
 ```
