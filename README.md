@@ -3492,7 +3492,7 @@ export default function MyApp({
 // const handleStatus = () => setStatus("koko");
 ```
 
-#### **Exemple 2 : Typer un evenement**
+#### **Exemple 2 : Tapez un événement**
 
 ```typescript
 import { useState } from "react";
