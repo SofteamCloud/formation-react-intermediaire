@@ -25,7 +25,7 @@
    - [React Query](#react-query)
    - [React Hook Form](#react-hook-form)
 7. [TypeScript](#typescript)
-8. [Tests](#tests)
+8. [Tests unitaire](#unit-tests)
 9. [Aller plus loin](#rendu-cote-serveur)
    - [Next.js](#nextjs)
    - [Remix](#remix)
@@ -3432,14 +3432,418 @@ const MUIForm = () => {
 export default MUIForm;
 ```
 
-### Rest
+## Typescript
+
+### **Définition**
+
+TypeScript est une extension de JavaScript qui introduit un système de typage statique, permettant de détecter les erreurs de type avant l'exécution. Cela améliore la fiabilité et la maintenabilité du code tout en offrant des outils puissants pour le développement moderne.
+
+---
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Amélioration de la lisibilité et de la robustesse du code** : TypeScript aide à documenter clairement les intentions avec des types explicites.
+2. **Développement d'applications complexes** : Particulièrement utile dans des projets avec de nombreuses interactions entre les modules et API.
+3. **Réduction des bugs** : Permet de détecter les erreurs dès la compilation au lieu d'attendre l'exécution.
+4. **Travail en équipe** : Fournit des contrats clairs pour les interfaces et fonctions, facilitant la collaboration.
+
+---
+
+### **Exemple concret**
+
+#### **Exemple 1 : Typer un composant**
+
+```typescript
+import { ReactNode } from "react";
+
+interface MyButtonProps {
+  title: string;
+  disabled: boolean;
+}
+
+function MyButton({ title, disabled }: MyButtonProps) {
+  return <button disabled={disabled}>{title}</button>;
+}
+
+export default function MyApp({
+  children,
+  styles,
+}: {
+  children: ReactNode;
+  styles: React.CSSProperties;
+}) {
+  // Infère le type "boolean"
+  // const [enabled, setEnabled] = useState(false);
+  // const [status, setStatus] = useState<Status>("idle");
+
+  return (
+    <div style={{ ...styles }}>
+      {children}
+      <MyButton title="I'm a disabled button" disabled={true} />
+    </div>
+  );
+}
+
+// useState
+// Typage explicite à "boolean"
+// const [enabled, setEnabled] = useState<boolean>(false);
+
+// type Status = "idle" | "loading" | "success" | "error";
+// const handleStatus = () => setStatus("koko");
+```
+
+#### **Exemple 2 : Typer un evenement**
+
+```typescript
+import { useState } from "react";
+
+export default function Form() {
+  const [value, setValue] = useState("Modifiez-moi");
+
+  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setValue(event.currentTarget.value);
+  }
+
+  return (
+    <>
+      <input value={value} onChange={handleChange} />
+      <p>Valeur : {value}</p>
+    </>
+  );
+}
+```
+
+#### **Exemple 3 : Typer useRef**
+
+```typescript
+import React, { useRef } from "react";
+
+const InputFocus: React.FC = () => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFocus = () => {
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div>
+      <input ref={inputRef} />
+      <button onClick={handleFocus}>Focus Input</button>
+    </div>
+  );
+};
+
+export default InputFocus;
+```
+
+#### **Exemple 4 : Typer useContext**
+
+```typescript
+import {
+  createContext,
+  useContext,
+  useState,
+  Dispatch,
+  SetStateAction,
+} from "react";
+
+type Theme = "light" | "dark" | "system";
+interface contextProps {
+  theme: Theme;
+  setTheme?: Dispatch<SetStateAction<Theme>>;
+}
+const ThemeContext = createContext<contextProps>({
+  theme: "light",
+});
+
+const useGetTheme = () => useContext(ThemeContext);
+
+export default function MyApp() {
+  const [theme, setTheme] = useState<Theme>("light");
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      <MyComponent />
+    </ThemeContext.Provider>
+  );
+}
+
+function MyComponent() {
+  const { theme } = useGetTheme();
+
+  return (
+    <div>
+      <p>Thème actif : {theme}</p>
+    </div>
+  );
+}
+```
+
+#### **Exemple 5 : Typer useReducer**
+
+```typescript
+import { useReducer } from "react";
+
+interface State {
+  count: number;
+}
+
+type CounterAction =
+  | { type: "reset" }
+  | { type: "setCount"; value: State["count"] };
+
+const initialState: State = { count: 0 };
+
+function stateReducer(state: State, action: CounterAction): State {
+  switch (action.type) {
+    case "reset":
+      return initialState;
+    case "setCount":
+      return { ...state, count: action.value };
+    default:
+      throw new Error("Unknown action");
+  }
+}
+
+export default function App() {
+  const [state, dispatch] = useReducer(stateReducer, initialState);
+
+  const addFive = () => dispatch({ type: "setCount", value: state.count + 5 });
+  const reset = () => dispatch({ type: "reset" });
+
+  return (
+    <div>
+      <h1>Bienvenue dans mon compteur</h1>
+
+      <p>Compteur : {state.count}</p>
+      <button onClick={addFive}>Ajouter 5</button>
+      <button onClick={reset}>Réinitialiser</button>
+    </div>
+  );
+}
+```
+
+## Tests unitaire
+
+### **Définition**
+
+Les tests unitaires sont une méthode de test logiciel où les plus petites unités de code (comme les fonctions ou les composants) sont testées individuellement pour vérifier qu'elles fonctionnent comme prévu. Ils garantissent la fiabilité du code et facilitent la maintenance.
+
+---
+
+### **Dans quel cas les utiliser ?**
+
+1. **Validation des fonctionnalités de base** : Assurez-vous qu'une fonction ou un composant réagit correctement aux entrées prévues.
+2. **Refactoring ou ajout de nouvelles fonctionnalités** : Les tests unitaires protègent contre les régressions lorsque vous modifiez le code.
+3. **Projets critiques ou complexes** : Lorsqu'une panne ou un bug peut avoir des conséquences importantes, les tests unitaires réduisent les risques.
+4. **Travail collaboratif** : Assurez que les modifications des autres développeurs n'introduisent pas d'erreurs.
+
+---
+
+### **Exemples concrets**
+
+#### **Configuration**
+
+```
+npm install jsdom --save-dev
+npm install vitest @testing-library/react @testing-library/jest-dom
+
+package.json :
+"scripts": {
+  "test": "vitest"
+}
+
+vitest.setup.ts:
+import '@testing-library/jest-dom';
+
+tsconfig.node.json:
+"compilerOptions": {
+  "types": ["vitest"]
+},
+
+vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+// Add Vitest type imports
+/// <reference types="vitest" />
+import type { UserConfig } from "vite";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: "jsdom", // Required for React testing
+    setupFiles: "./vitest.setup.ts", // Optional: path to setup file
+  },
+} as UserConfig); // Add this to ensure `test` is recognized
+
 
 ```
 
-**coming soon**
+#### **Exemple 1 : Test de base**
 
+```typescript
+// Button.tsx
+import React from "react";
+
+type ButtonProps = {
+  label: string;
+  onClick: () => void;
+};
+
+export const Button: React.FC<ButtonProps> = ({ label, onClick }) => (
+  <button onClick={onClick}>{label}</button>
+);
+
+// Button.test.tsx
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { Button } from "./Button";
+
+describe("Button component", () => {
+  it("renders the button with the correct label", () => {
+    render(<Button label="Click Me" onClick={() => {}} />);
+    expect(screen.getByText("Click Me")).toBeInTheDocument();
+  });
+
+  it("calls onClick when clicked", () => {
+    const onClick = vi.fn(); // Mock function
+    render(<Button label="Click Me" onClick={onClick} />);
+    fireEvent.click(screen.getByText("Click Me"));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+});
 ```
 
+#### **Exemple 2 : Tester le changement de state**
+
+```typescript
+// Counter.tsx
+import { useState } from "react";
+
+export const Counter = () => {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount((prev) => prev + 1)}>Increment</button>
+    </div>
+  );
+};
+
+// Counter.test.tsx
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import { Counter } from "./Counter";
+
+describe("Counter component", () => {
+  it("increments the count when the button is clicked", () => {
+    render(<Counter />);
+    const button = screen.getByText("Increment");
+    fireEvent.click(button);
+    expect(screen.getByText("Count: 1")).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(screen.getByText("Count: 2")).toBeInTheDocument();
+  });
+});
 ```
 
+#### **Exemple 3 : Tester un hook**
+
+```typescript
+// useCounter.tsx
+import { useState } from "react";
+
+export function useCounter(initialValue: number = 0) {
+  const [count, setCount] = useState(initialValue);
+
+  const increment = () => setCount((prev) => prev + 1);
+  const decrement = () => setCount((prev) => prev - 1);
+  const reset = () => setCount(initialValue);
+
+  return { count, increment, decrement, reset };
+}
+
+// useCounter.test.tsx
+import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import { useCounter } from "./useCounter";
+
+describe("useCounter", () => {
+  it("should initialize with the default value", () => {
+    const { result } = renderHook(() => useCounter());
+    expect(result.current.count).toBe(0);
+  });
+
+  it("should initialize with a custom initial value", () => {
+    const { result } = renderHook(() => useCounter(5));
+    expect(result.current.count).toBe(5);
+  });
+
+  it("should increment the count", () => {
+    const { result } = renderHook(() => useCounter());
+
+    act(() => {
+      result.current.increment();
+    });
+
+    expect(result.current.count).toBe(1);
+  });
+
+  it("should decrement the count", () => {
+    const { result } = renderHook(() => useCounter(3));
+
+    act(() => {
+      result.current.decrement();
+    });
+
+    expect(result.current.count).toBe(2);
+  });
+
+  it("should reset the count to the initial value", () => {
+    const { result } = renderHook(() => useCounter(10));
+
+    act(() => {
+      result.current.increment();
+      result.current.increment();
+      result.current.reset();
+    });
+
+    expect(result.current.count).toBe(10);
+  });
+});
 ```
+
+## Aller plus loin
+
+### Next.js
+
+### **Définition**
+
+Next.js est un framework React qui permet de créer des applications web performantes et évolutives. Il offre des fonctionnalités avancées comme le rendu côté serveur (SSR), la génération statique de pages (SSG), la gestion des routes et une optimisation automatique des performances. Next.js est conçu pour faciliter le développement d'applications web tout en offrant une expérience utilisateur rapide et fluide.
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Applications avec SEO optimisé** : Utilisé pour les sites web qui nécessitent un rendu côté serveur (SSR) pour un meilleur référencement.
+2. **Applications avec des pages statiques** : Génération de pages statiques (SSG) pour un chargement ultra-rapide.
+3. **Applications avec du rendu dynamique** : Prise en charge du rendu côté client pour des pages dynamiques avec une navigation fluide.
+4. **Projets fullstack** : Permet de gérer le frontend et le backend dans un même projet grâce à ses API routes.
+
+### Remix
+
+### **Définition**
+
+Remix est un framework web basé sur React qui permet de créer des applications web modernes en tirant parti de la puissance des navigateurs et des serveurs. Il se concentre sur la performance, la gestion des données et l'expérience utilisateur en optimisant les chargements de page, en offrant des rendus côté serveur (SSR) et en facilitant la gestion des erreurs et des transitions de navigation.
+
+### **Dans quel cas l'utiliser ?**
+
+1. **Applications avec des besoins de rendu côté serveur (SSR)** : Remix gère efficacement le rendu des pages côté serveur, ce qui est idéal pour les applications nécessitant un bon SEO.
+2. **Applications avec une navigation fluide** : Remix permet un chargement rapide des pages et une expérience de navigation fluide en utilisant des techniques avancées comme la mise en cache des données et le chargement différé.
+3. **Gestion des erreurs et des formulaires** : Il propose des mécanismes efficaces pour gérer les erreurs et la soumission des formulaires, ce qui simplifie le développement des applications complexes.
+4. **Applications avec une architecture fullstack** : Remix permet de construire des applications fullstack tout en offrant des fonctionnalités avancées pour gérer les données et l'état de l'application.
+
+---
+
+### Merci pour votre attention
